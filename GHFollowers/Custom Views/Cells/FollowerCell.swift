@@ -7,8 +7,8 @@
 
 import UIKit
 
-class FollwerCell: UICollectionViewCell {
-    static let reuseId = "FollwerCell"
+class FollowerCell: UICollectionViewCell {
+    static let reuseId = "FollowerCell"
     let avatarImageView = GFAvatarImageView(frame: .zero)
     let userNameLabel = GFTitleLabel(textAlignment: .center, fontSize: 16)
     
