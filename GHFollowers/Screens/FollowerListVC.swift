@@ -15,6 +15,8 @@ class FollowerListVC: UIViewController {
     
     var username: String!
     var followers: [Follower] = []
+    var page = 1
+    var hasMoreFollowers = true
     
     var collectionView: UICollectionView!
     var dataSource: UICollectionViewDiffableDataSource<Section, Follower>!
@@ -23,7 +25,7 @@ class FollowerListVC: UIViewController {
         super.viewDidLoad()
         configureViewController()
         configureCollectionView()
-        getFollowers()
+        getFollowers(username: username, page: page)
         configureDataSource()
         // Do any additional setup after loading the view.
     }
@@ -44,6 +46,7 @@ class FollowerListVC: UIViewController {
         
         // Initialize the object and then place it in sub view
         collectionView = UICollectionView(frame: view.bounds, collectionViewLayout: UIHelper.createThreeColumnLayout(in: view))
+        collectionView.delegate = self
         view.addSubview(collectionView)
         
         collectionView.backgroundColor = .systemBackground
@@ -53,14 +56,17 @@ class FollowerListVC: UIViewController {
     }
     
     
-    func getFollowers( ) {
-        NetworkManager.shared.getFollowers(for: username, page: 1) { [weak self] result in
+    func getFollowers(username: String, page: Int) {
+        showLoadingView()
+        NetworkManager.shared.getFollowers(for: username, page: page) { [weak self] result in
             
             guard let self = self else { return }
+            self.dismissLoadingView()
             
             switch result {
             case .success(let followers):
-                self.followers = followers
+                if followers.count < 100 { self.hasMoreFollowers = false }
+                self.followers.append(contentsOf: followers)
                 self.updateData()
                 
             case .failure(let errorMessage):
@@ -93,7 +99,22 @@ class FollowerListVC: UIViewController {
         }
                 
     }
-    
-    
-    
+}
+
+extension FollowerListVC: UICollectionViewDelegate {
+    func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
+        let offsetY = scrollView.contentOffset.y
+        let contentHeight = scrollView.contentSize.height
+        let height = scrollView.frame.size.height
+        
+        print("offsetY: \(offsetY)")
+        print("contentHeight: \(contentHeight)")
+        print("height: \(height)")
+        
+        if offsetY > contentHeight - height {
+            guard hasMoreFollowers else { return }
+            page += 1
+            getFollowers(username: username, page: page)
+        }
+    }
 }
